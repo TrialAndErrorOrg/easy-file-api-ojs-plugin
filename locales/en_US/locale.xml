@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE locale SYSTEM "../../../lib/pkp/dtd/locale.dtd">
+<locale name="en_US" full_name="English (United States)">
+    <message key="plugins.generic.easyFileApi.displayName">Easy File API Plugin</message>
+    <message key="plugins.generic.easyFileApi.description">Provides an easy-to-use API endpoint for downloading submission files.</message>
+</locale>
