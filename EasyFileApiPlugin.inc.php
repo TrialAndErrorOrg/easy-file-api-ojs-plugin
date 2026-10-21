@@ -1,88 +1,64 @@
 <?php
-/**
- * @file api/v1/site/PKPSiteHandler.inc.php
- *
- * Copyright (c) 2014-2021 Simon Fraser University
- * Copyright (c) 2000-2021 John Willinsky
- * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
- *
- * @class PKPSiteHandler
- * @ingroup api_v1_users
- *
- * @brief Base class to handle API requests for the site object.
- */
 
-import('lib.pkp.classes.handler.APIHandler');
-use APP\Services\SubmissionFileService;
+import('lib.pkp.classes.plugins.GenericPlugin');
 
-class EasyFileApiHandler extends APIHandler
+class EasyFileApiPlugin extends GenericPlugin
 {
-    /** @var string One of the SCHEMA_... constants */
-    public $schemaName = SCHEMA_SITE;
-
     /**
-     * @copydoc APIHandler::__construct()
+     * @copydoc Plugin::getName()
      */
-    public function __construct()
+    function getName()
     {
-        $this->_handlerPath = '_files';
-        $roles = [ROLE_ID_SITE_ADMIN, ROLE_ID_MANAGER];
-        $this->_endpoints = array(
-            'GET' => array(
-                array(
-                    'pattern' => $this->getEndpointPattern() . '/{submissionFileId}',
-                    'handler' => array($this, 'getFile'),
-                    'roles' => $roles,
-                ),
-            ),
-        );
-        parent::__construct();
-
+        return 'EasyFileAPIPlugin';
     }
 
     /**
-     * @copydoc PKPHandler::authorize
+     * Get the display name of this plugin.
+     * @return string
      */
-    public function authorize($request, &$args, $roleAssignments)
+    public function getDisplayName()
     {
-        import('lib.pkp.classes.security.authorization.PolicySet');
-        $rolePolicy = new PolicySet(COMBINING_PERMIT_OVERRIDES);
+        return __('plugins.generic.easyFileApi.displayName');
+    }
 
-        import('lib.pkp.classes.security.authorization.RoleBasedHandlerOperationPolicy');
-        foreach ($roleAssignments as $role => $operations) {
-            $rolePolicy->addPolicy(new RoleBasedHandlerOperationPolicy($request, $role, $operations));
+    /**
+     * Get a brief description of this plugin.
+     * @return string
+     */
+    public function getDescription()
+    {
+        return __('plugins.generic.easyFileApi.description');
+    }
+
+    /**
+     * @copydoc Plugin::register()
+     */
+    public function register($category, $path, $mainContextId = null)
+    {
+
+        if (!parent::register($category, $path, $mainContextId)) {
+            return false;
         }
-        $this->addPolicy($rolePolicy);
 
+        if ($this->getEnabled($mainContextId)) {
+            HookRegistry::register('Dispatcher::dispatch', function (string $hook, \PKPRequest $request): bool {
+                $path = array_slice(explode('/', trim($request->getRequestPath(), '/')), -2);
+                $router = $request->getRouter();
+                if ($router instanceof \APIRouter && $path[0] == '_files') {
+                    import('plugins.generic.easyFileApi.EasyFileApiHandler');
+                    $handler = new EasyFileApiHandler($this);
+                    $router->setHandler($handler);
+                    $handler->getApp()->run();
+                    exit;
+                }
+                return false;
+            });
+            return true;
+        }
 
-        return parent::authorize($request, $args, $roleAssignments);
+        return true;
     }
-    /**
-     * Get the File 
-     *
-     * @param $slimRequest Request Slim request object
-     * @param $response Response object
-     * @param array $args arguments
-     *
-     * @return Response
-     */
-    public function getFile($slimRequest, $response, $args)
-    {
-
-        $submissionFileService = Services::get('submissionFile'); /* @var $submissionFileService SubmissionFileService */
-
-        $submissionFileId = $args['submissionFileId'];
-
-        $submissionFile = $submissionFileService::get($submissionFileId);
-        $fileId = $submissionFile->getData('fileId');
-        $submissionFileName = $submissionFile->getLocalizedData('name');
-        Services::get('file')->download((int) $fileId, $submissionFileName);
-
-        return $response->withJson([], 200);
-    }
-
-
 
 }
 
-return new EasyFileApiHandler();
+?>

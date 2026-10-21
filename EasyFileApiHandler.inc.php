@@ -73,7 +73,7 @@ class EasyFileApiHandler extends APIHandler
 
         $submissionFileId = $args['submissionFileId'];
 
-        $submissionFile = $submissionFileService::get($submissionFileId);
+        $submissionFile = $submissionFileService->get($submissionFileId);
         $fileId = $submissionFile->getData('fileId');
         $submissionFileName = $submissionFile->getLocalizedData('name');
         Services::get('file')->download((int) $fileId, $submissionFileName);
