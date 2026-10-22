@@ -17,5 +17,3 @@ msgstr "EasyFileAPI"
 msgid "plugins.generic.easyFileApi.description"
 msgstr "Provides an easier way to download files remotely."
 
-msgid "plugins.generic.easyFileApi.settings"
-msgstr "Settings"
